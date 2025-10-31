@@ -1,4 +1,4 @@
-name: Terraform Apply Azure Resource Group
+name: Terraform Apply Azure Resource Group (Managed Identity)
 
 on:
   workflow_dispatch:
@@ -19,18 +19,20 @@ on:
         type: string
 
 permissions:
+  id-token: write        # OIDC 토큰 발급 허용 (반드시 필요)
   contents: read
 
 jobs:
   terraform:
-    name: Apply Terraform
-    runs-on: ubuntu-latest
+    name: Apply Terraform via Managed Identity
+    runs-on: ubuntu-latest   # self-hosted runner면 라벨 변경 (예: [self-hosted])
     env:
       TF_IN_AUTOMATION: "true"
       TF_WORKING_DIR: terraform
       TF_VAR_resource_group_name: ${{ github.event.inputs.resource_group_name }}
       TF_VAR_location: ${{ github.event.inputs.location }}
       TF_VAR_tags: ${{ github.event.inputs.tags_json }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -40,10 +42,14 @@ jobs:
         with:
           terraform_version: 1.5.7
 
-      - name: Azure login
+      # ✅ Azure Managed Identity 로그인 (OIDC + Federated Credential)
+      - name: Azure login via Managed Identity
         uses: azure/login@v2
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          auth-type: IDENTITY
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
