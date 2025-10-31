@@ -1,0 +1,63 @@
+name: Terraform Apply Azure Resource Group
+
+on:
+  workflow_dispatch:
+    inputs:
+      resource_group_name:
+        description: "Name of the resource group to create"
+        required: true
+        type: string
+      location:
+        description: "Azure region for the resource group"
+        required: false
+        default: "eastus"
+        type: string
+      tags_json:
+        description: "Optional JSON object of tags to apply (e.g. {\"environment\":\"dev\"})"
+        required: false
+        default: "{}"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Apply Terraform
+    runs-on: ubuntu-latest
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_WORKING_DIR: terraform
+      TF_VAR_resource_group_name: ${{ github.event.inputs.resource_group_name }}
+      TF_VAR_location: ${{ github.event.inputs.location }}
+      TF_VAR_tags: ${{ github.event.inputs.tags_json }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -input=false -auto-approve tfplan
