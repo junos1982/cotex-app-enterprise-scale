@@ -44,4 +44,4 @@ A workflow is provided at [`.github/workflows/terraform-apply.yml`](.github/work
 
 1. [Create an Azure service principal](https://learn.microsoft.com/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#create-a-service-principal) and grant it permissions to manage resource groups in your subscription.
 2. Store the service principal identifiers in the repository secrets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID`.
-3. Push changes to the repository. On each push, the workflow logs in to Azure using the existing Azure CLI login step and runs `az group update --name rg-cotex-git --set tags.생성자="이동준"` to apply the tag.
+3. Push changes to the repository. On each push, the workflow logs in to Azure using the existing Azure CLI login step and ensures a basic Ubuntu virtual machine named `cotex-basic-vm` exists in the `rg-cotex-git` resource group by running `az vm create --resource-group rg-cotex-git --name cotex-basic-vm --image Ubuntu2204 --size Standard_B1s --admin-username azureuser --generate-ssh-keys --tags 생성자="이동준"` when needed.
