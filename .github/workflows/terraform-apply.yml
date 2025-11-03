@@ -1,69 +1,24 @@
-name: Terraform Apply Azure Resource Group (Managed Identity)
+name: Run Azure CLI Login with OpenID Connect
+on: [push]
+     
+jobs: 
+  test:
+    permissions:
+      id-token: write # Require write permission to Fetch an OIDC token.
 
-on:
-  workflow_dispatch:
-    inputs:
-      resource_group_name:
-        description: "Name of the resource group to create"
-        required: true
-        type: string
-      location:
-        description: "Azure region for the resource group"
-        required: false
-        default: "eastus"
-        type: string
-      tags_json:
-        description: "Optional JSON object of tags to apply (e.g. {\"environment\":\"dev\"})"
-        required: false
-        default: "{}"
-        type: string
-
-permissions:
-  id-token: write        # OIDC 토큰 발급 허용 (반드시 필요)
-  contents: read
-
-jobs:
-  terraform:
-    name: Apply Terraform via Managed Identity
-    runs-on: ubuntu-latest   # self-hosted runner면 라벨 변경 (예: [self-hosted])
-    env:
-      TF_IN_AUTOMATION: "true"
-      TF_WORKING_DIR: terraform
-      TF_VAR_resource_group_name: ${{ github.event.inputs.resource_group_name }}
-      TF_VAR_location: ${{ github.event.inputs.location }}
-      TF_VAR_tags: ${{ github.event.inputs.tags_json }}
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.7
-
-      # ✅ Azure Managed Identity 로그인 (OIDC + Federated Credential)
-      - name: Azure login via Managed Identity
-        uses: azure/login@v2
-        with:
-          auth-type: IDENTITY
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Terraform Init
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform init -input=false
-
-      - name: Terraform Validate
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform validate
-
-      - name: Terraform Plan
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform plan -input=false -out=tfplan
-
-      - name: Terraform Apply
-        if: github.event_name == 'workflow_dispatch'
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform apply -input=false -auto-approve tfplan
+    - name: Azure CLI Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  
+    - name: Azure CLI script
+      uses: azure/cli@v2
+      with:
+        azcliversion: latest
+        inlineScript: |
+          az account show
+          # You can write your Azure CLI inline scripts here.
