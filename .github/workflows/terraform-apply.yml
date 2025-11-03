@@ -23,11 +23,11 @@ jobs:
           az account show
           # You can write your Azure CLI inline scripts here.
 
-    - name: Create resource group
+    - name: Tag existing resource group
       uses: azure/cli@v2
       with:
         azcliversion: latest
         inlineScript: |
-          az group create \
+          az group update \
             --name rg-cotex-test1 \
-            --location eastus
+            --set tags.생성자="이동준"
