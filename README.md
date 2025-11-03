@@ -1,56 +1,91 @@
 # cotex-app-enterprise-scale
 
-This repository contains Terraform configuration to provision a basic Azure resource group. The configuration is located in the [`terraform/`](terraform/) directory.
+This repository provides a minimal, opinionated Terraform layout for deploying Azure resources. The structure follows the
+recommended approach of separating reusable modules from environment-specific configuration. A single sample environment (`dev`)
+creates a tagged resource group so you can extend the pattern with additional Azure services.
+
+```
+terraform/
+├── environments/
+│   └── dev/
+│       ├── backend.tf.example
+│       ├── main.tf
+│       ├── outputs.tf
+│       ├── providers.tf
+│       ├── terraform.tfvars.example
+│       ├── variables.tf
+│       └── versions.tf
+└── modules/
+    └── resource-group/
+        ├── main.tf
+        ├── outputs.tf
+        └── variables.tf
+```
 
 ## Prerequisites
 
 - [Terraform](https://developer.hashicorp.com/terraform/downloads) 1.3.0 or later
 - An Azure subscription
 - Azure CLI authenticated with the subscription (`az login`)
+- An Azure Storage Account and container to host the Terraform state file (see below)
 
-## Usage
+## Configure remote state storage
 
-1. Initialize Terraform to download the Azure provider:
+1. Create (or reuse) a resource group, storage account, and blob container dedicated to Terraform state. For example:
 
    ```bash
-   cd terraform
+   az group create --name tfstate-rg --location eastus
+   az storage account create \
+     --resource-group tfstate-rg \
+     --name tfstateACCOUNT \
+     --sku Standard_LRS \
+     --encryption-services blob
+   az storage container create \
+     --name tfstate \
+     --account-name tfstateACCOUNT \
+     --auth-mode login
+   ```
+
+2. Copy `terraform/environments/dev/backend.tf.example` to `backend.tf` in the same directory and update the values to match
+your storage resources.
+
+## Deploy the sample environment
+
+1. Navigate to the dev environment folder and review the example variables file:
+
+   ```bash
+   cd terraform/environments/dev
+   cp terraform.tfvars.example terraform.tfvars
+   ```
+
+   Update `terraform.tfvars` with the desired resource group name, location, and any additional tags.
+
+2. Initialize Terraform with the remote backend configuration:
+
+   ```bash
    terraform init
    ```
 
-2. Provide the required variables and apply the configuration. You can do this with a `terraform.tfvars` file or by supplying variables on the command line. For example:
+   If you are using Azure Storage for remote state, ensure that `backend.tf` exists alongside the environment files before
+   initializing. The example backend file configures the storage account, container, and blob key that will hold the state.
+
+3. Review the execution plan and apply the changes:
 
    ```bash
-   terraform apply \
-     -var "resource_group_name=my-resource-group" \
-     -var "location=eastus" \
-     -var 'tags={ environment = "dev" }'
+   terraform plan
+   terraform apply
    ```
 
-3. Confirm the plan to create the resource group in your Azure subscription.
-
-4. To remove the resource group, run:
+4. When you no longer need the sample infrastructure, destroy it:
 
    ```bash
    terraform destroy
    ```
 
-## Outputs
+## Extending the architecture
 
-After applying, Terraform will output the resource group ID and name for reference.
-
-## Automating with GitHub Actions
-
-A reusable workflow is provided at [`.github/workflows/terraform-apply.yml`](.github/workflows/terraform-apply.yml) to provision the
-resource group from GitHub Actions using Terraform.
-
-1. [Create an Azure service principal](https://learn.microsoft.com/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#create-a-service-principal)
-   and grant it permissions to manage resource groups in your subscription.
-2. Store the JSON credentials for the service principal in a repository secret named `AZURE_CREDENTIALS`. The value should match
-   the format expected by [`azure/login`](https://github.com/Azure/login#configure-deployment-credentials-on-github-secrets).
-3. (Optional) Define repository variables for frequently used Terraform inputs such as the resource group name or location.
-4. Trigger the workflow manually from the **Actions** tab using **Run workflow**. Provide the desired `resource_group_name`,
-   `location`, and an optional `tags_json` value (e.g. `{"environment":"dev"}`). The workflow will run `terraform init`, `terraform
-   validate`, `terraform plan`, and `terraform apply` to create or update the resource group.
-
-> **Note:** The workflow sets `TF_VAR_tags` directly from the `tags_json` input. Provide the tags as a valid JSON object so
-> Terraform can automatically parse it into the expected map.
+- Create additional modules under `terraform/modules` to encapsulate reusable building blocks (e.g., networks, databases).
+- Add new environment folders (such as `test` or `prod`) under `terraform/environments` that consume the shared modules with
+environment-specific settings.
+- Configure CI/CD pipelines (GitHub Actions, Azure DevOps, etc.) to run `terraform fmt`, `terraform validate`, `terraform plan`,
+and `terraform apply` against each environment folder as part of your deployment workflow.

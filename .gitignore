@@ -1,0 +1,16 @@
+# Terraform local working directories
+**/.terraform/
+
+# Local state files
+**/terraform.tfstate
+**/terraform.tfstate.backup
+
+# Terraform plan files
+**/*.tfplan
+
+# Local variable overrides
+**/*.tfvars
+!**/*.tfvars.example
+
+# Backend configuration overrides
+terraform/environments/*/backend.tf

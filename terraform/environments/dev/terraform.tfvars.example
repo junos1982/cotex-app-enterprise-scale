@@ -1,0 +1,7 @@
+resource_group_name = "rg-dev-demo"
+location            = "eastus2"
+
+# Optional additional tags to apply to the resource group
+# tags = {
+#   "owner" = "platform-team"
+# }
