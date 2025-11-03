@@ -79,6 +79,27 @@ your storage resources.
    terraform destroy
    ```
 
+## Automate deployments with GitHub Actions
+
+This repository includes a reusable workflow in `.github/workflows/terraform.yml` that plans every pull request and applies the configuration to Azure when changes are pushed to the `main` branch. The workflow operates directly against the `terraform/environments/dev` folder so you can keep adding new environments without changing the automation.
+
+### Required repository secrets
+
+Configure the following secrets in your GitHub repository to allow the workflow to authenticate with Azure and connect to the remote state storage. Federated credentials with GitHub Actions are recommended so that no long-lived client secrets are required.
+
+- `AZURE_CLIENT_ID` – Application (client) ID for the federated identity service principal.
+- `AZURE_TENANT_ID` – Azure AD tenant ID.
+- `AZURE_SUBSCRIPTION_ID` – Subscription that will host the sample infrastructure.
+- `TF_BACKEND_RESOURCE_GROUP` – Resource group that contains the Terraform state storage account.
+- `TF_BACKEND_STORAGE_ACCOUNT` – Name of the storage account created for Terraform state.
+- `TF_BACKEND_CONTAINER` – Blob container inside the storage account that stores the state file.
+- `TF_BACKEND_KEY` – Name of the blob that should hold the state file (for example `dev.terraform.tfstate`).
+- `TF_VAR_RESOURCE_GROUP_NAME` – Name of the resource group to create (matches the `resource_group_name` variable).
+
+You can optionally define additional `TF_VAR_...` secrets (such as `TF_VAR_LOCATION`) to override variable defaults for the automated runs. Secrets are exposed to Terraform through environment variables, so no sensitive data is committed to the repository.
+
+The workflow writes a temporary `backend.hcl` file at runtime using the values above. The new `terraform/.gitignore` file ensures backend configuration and variable files remain untracked in Git.
+
 ## Extending the architecture
 
 - Create additional modules under `terraform/modules` to encapsulate reusable building blocks (e.g., networks, databases).
