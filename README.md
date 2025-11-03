@@ -38,6 +38,47 @@ This repository contains Terraform configuration to provision a basic Azure reso
 
 After applying, Terraform will output the resource group ID and name for reference.
 
+## Deploying from Azure Cloud Shell
+
+Azure Cloud Shell already includes Terraform and the Azure CLI, so you can run this
+configuration without installing additional tools locally. Follow these steps from
+an open Cloud Shell session:
+
+1. Ensure your Cloud Shell is using the Bash environment and that a storage
+   account is mounted (Cloud Shell prompts for this automatically the first time
+   you launch it).
+2. Clone this repository and change into the Terraform configuration directory:
+
+   ```bash
+   git clone https://github.com/<your-org>/cotex-app-enterprise-scale.git
+   cd cotex-app-enterprise-scale/terraform
+   ```
+
+3. Initialize Terraform:
+
+   ```bash
+   terraform init
+   ```
+
+4. Apply the configuration, providing the required variables. You can pass them
+   inline or create a `terraform.tfvars` file. For example:
+
+   ```bash
+   terraform apply \
+     -var "resource_group_name=my-resource-group" \
+     -var "location=eastus" \
+     -var 'tags={ environment = "dev" }'
+   ```
+
+5. Review the plan output and approve it to create the resource group in your
+   Azure subscription.
+
+6. When you no longer need the resource group, destroy it from Cloud Shell with:
+
+   ```bash
+   terraform destroy
+   ```
+
 ## Automating with GitHub Actions
 
 A reusable workflow is provided at [`.github/workflows/terraform-apply.yml`](.github/workflows/terraform-apply.yml) to provision the
