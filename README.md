@@ -1,6 +1,7 @@
 # cotex-app-enterprise-scale
 
-This repository contains Terraform configuration to provision a basic Azure resource group. The configuration is located in the [`terraform/`](terraform/) directory.
+This repository contains Terraform configuration to provision a basic Azure resource group. The configuration is located in the
+[`terraform/`](terraform/) directory.
 
 ## Prerequisites
 
@@ -40,8 +41,11 @@ After applying, Terraform will output the resource group ID and name for referen
 
 ## Automating with GitHub Actions
 
-A workflow is provided at [`.github/workflows/terraform-apply.yml`](.github/workflows/terraform-apply.yml) to log in to Azure with OpenID Connect and tag the existing `rg-cotex-git` resource group using the Azure CLI.
+A workflow is provided at [`.github/workflows/terraform-apply.yml`](.github/workflows/terraform-apply.yml) to log in to Azure with OpenID Connect and execute an Azure CLI script.
 
-1. [Create an Azure service principal](https://learn.microsoft.com/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#create-a-service-principal) and grant it permissions to manage resource groups in your subscription.
+1. [Create an Azure service principal](https://learn.microsoft.com/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#create-a-service-principal) and grant it permissions to manage virtual machines in the `rg-cotex-git` resource group.
 2. Store the service principal identifiers in the repository secrets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID`.
-3. Push changes to the repository. On each push, the workflow logs in to Azure using the existing Azure CLI login step and ensures a basic Ubuntu virtual machine named `cotex-basic-vm` exists in the `rg-cotex-git` resource group by running `az vm create --resource-group rg-cotex-git --name cotex-basic-vm --image Ubuntu2204 --size Standard_B1s --admin-username azureuser --generate-ssh-keys --tags 생성자="이동준"` when needed.
+3. Push changes to the repository. On each push, the workflow logs in to Azure using the existing Azure CLI login step and runs a script that:
+   - Displays the current Azure account context.
+   - Ensures a basic Ubuntu virtual machine named `cotex-basic-vm` exists in the `rg-cotex-git` resource group (creating it in the `koreacentral` region if missing).
+   - Applies the `생성자=이동준` tag to the VM whether it is created or already present.

@@ -20,28 +20,37 @@ jobs:
       with:
         azcliversion: latest
         inlineScript: |
-          az account show
-          # You can write your Azure CLI inline scripts here.
-
-    - name: Ensure cotex-basic-vm exists
-      uses: azure/cli@v2
-      with:
-        azcliversion: latest
-        inlineScript: |
           set -euo pipefail
 
-          VM_NAME="cotex-basic-vm"
           RG_NAME="rg-cotex-git"
+          VM_NAME="cotex-basic-vm"
+          LOCATION="koreacentral"
+          IMAGE="Ubuntu2204"
+          SIZE="Standard_B1s"
+          ADMIN_USER="azureuser"
+          TAG_KEY="생성자"
+          TAG_VALUE="이동준"
 
+          echo "Verifying current Azure account context..."
+          az account show --output table
+
+          echo "Checking if virtual machine ${VM_NAME} exists in ${RG_NAME}..."
           if az vm show --resource-group "${RG_NAME}" --name "${VM_NAME}" >/dev/null 2>&1; then
-            echo "Virtual machine ${VM_NAME} already exists in ${RG_NAME}, skipping creation."
+            echo "Virtual machine ${VM_NAME} already exists. Ensuring tag ${TAG_KEY}=${TAG_VALUE} is applied."
+            az resource tag \
+              --resource-group "${RG_NAME}" \
+              --name "${VM_NAME}" \
+              --resource-type "Microsoft.Compute/virtualMachines" \
+              --tags "${TAG_KEY}=${TAG_VALUE}"
           else
+            echo "Creating virtual machine ${VM_NAME} in ${RG_NAME}."
             az vm create \
               --resource-group "${RG_NAME}" \
               --name "${VM_NAME}" \
-              --image Ubuntu2204 \
-              --size Standard_B1s \
-              --admin-username azureuser \
+              --image "${IMAGE}" \
+              --size "${SIZE}" \
+              --location "${LOCATION}" \
+              --admin-username "${ADMIN_USER}" \
               --generate-ssh-keys \
-              --tags 생성자="이동준"
+              --tags "${TAG_KEY}=${TAG_VALUE}"
           fi
