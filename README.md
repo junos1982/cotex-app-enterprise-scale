@@ -40,8 +40,8 @@ After applying, Terraform will output the resource group ID and name for referen
 
 ## Automating with GitHub Actions
 
-A workflow is provided at [`.github/workflows/terraform-apply.yml`](.github/workflows/terraform-apply.yml) to log in to Azure with OpenID Connect and tag the existing `rg-cotex-test1` resource group using the Azure CLI.
+A workflow is provided at [`.github/workflows/terraform-apply.yml`](.github/workflows/terraform-apply.yml) to log in to Azure with OpenID Connect and tag the existing `rg-cotex-git` resource group using the Azure CLI.
 
 1. [Create an Azure service principal](https://learn.microsoft.com/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#create-a-service-principal) and grant it permissions to manage resource groups in your subscription.
 2. Store the service principal identifiers in the repository secrets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID`.
-3. Push changes to the repository. On each push, the workflow logs in to Azure using the existing Azure CLI login step and runs `az group update --name rg-cotex-test1 --set tags.생성자="이동준"` to apply the tag.
+3. Push changes to the repository. On each push, the workflow logs in to Azure using the existing Azure CLI login step and runs `az group update --name rg-cotex-git --set tags.생성자="이동준"` to apply the tag.

@@ -29,5 +29,5 @@ jobs:
         azcliversion: latest
         inlineScript: |
           az group update \
-            --name rg-cotex-test1 \
+            --name rg-cotex-git \
             --set tags.생성자="이동준"
