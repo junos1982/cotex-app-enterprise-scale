@@ -1,0 +1,6 @@
+# Ignore local Terraform state and sensitive configuration files
+**/.terraform/
+**/.terraform.lock.hcl
+**/backend.hcl
+**/*.tfvars
+**/*.tfvars.json
